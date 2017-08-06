@@ -1,0 +1,25 @@
+### Java template
+*.class
+*.jar
+*.war
+*.ear
+
+
+### Eclipse template
+.metadata
+bin/
+.settings/
+.loadpath
+.recommenders
+
+# Eclipse Core
+.project
+.classpath
+.target
+
+### Maven template
+target/
+.mvn
+
+.idea
+*.iml
