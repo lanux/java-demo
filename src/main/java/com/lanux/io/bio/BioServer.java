@@ -18,7 +18,7 @@ public class BioServer extends IoStream {
     private ServerSocket serverSocket;
     private volatile boolean running;
 
-    private ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
+    private static ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
         final AtomicInteger threadNumber = new AtomicInteger(1);
 
         @Override
@@ -29,7 +29,7 @@ public class BioServer extends IoStream {
 
     public BioServer() {
         try {
-            serverSocket = new ServerSocket(NetConfig.server_port);
+            serverSocket = new ServerSocket(NetConfig.SERVER_PORT);
             running = true;
             while (true) {
                 final Socket socket = serverSocket.accept();
@@ -52,8 +52,9 @@ public class BioServer extends IoStream {
 
     private void handle(Socket socket) {
         try {
+            //循环read write Stream，一直没有close可能会爆内存。
+            //所以阻塞IO一般一个连接使用一次，不会循环利用。
             while (running) {
-                //socket.getInputStream 和 socket.getOutputStream 一直没有close，会爆内存
                 byte[] bytes = readStream(socket.getInputStream());
                 if (bytes != null && bytes.length > 0) {
                     String s = new String(bytes);

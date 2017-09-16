@@ -33,7 +33,7 @@ public class IoStream {
         byte[] totalLen = new byte[LENGTH_BYTES];
         int readLen = -1;//本次读取的字节数
         int position = 0;//已经读取数据的下一个位置
-        while ((readLen = inputStream.read(totalLen, 0, totalLen.length)) >= 0) {
+        while ((readLen = inputStream.read(totalLen, 0, totalLen.length)) !=-1) {
             if (position==0)
             {
                 position = LENGTH_BYTES;

@@ -14,9 +14,9 @@ public class BioClient extends IoStream implements Closeable {
     private Socket socket;
 
     public BioClient init() throws Exception {
-        socket = new Socket(NetConfig.server_ip, NetConfig.server_port);
+        socket = new Socket(NetConfig.SERVER_IP, NetConfig.SERVER_PORT);
         socket.setKeepAlive(true);
-        socket.setSoTimeout(NetConfig.so_timeout);
+        socket.setSoTimeout(NetConfig.SO_TIMEOUT);
         return this;
     }
 

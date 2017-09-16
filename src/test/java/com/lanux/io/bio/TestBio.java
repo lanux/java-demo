@@ -22,6 +22,7 @@ public class TestBio {
                 client.read();
             }
 
+            System.out.println();
             Thread.sleep(2000);
 
             for (int j = 0; j < 5; j++) {
