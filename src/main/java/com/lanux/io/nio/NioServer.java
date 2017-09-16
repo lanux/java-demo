@@ -1,6 +1,7 @@
 package com.lanux.io.nio;
 
 import com.lanux.io.NetConfig;
+import com.lanux.io.bio.IoStream;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -14,36 +15,36 @@ import java.util.Iterator;
 /**
  * Created by lanux on 2017/9/16.
  */
-public class NioServer {
+public class NioServer extends IoStream{
+    ByteBuffer header=ByteBuffer.allocate(4);
 
-
-    public static void handleAccept(SelectionKey key) throws IOException {
+    public void handleAccept(SelectionKey key) throws IOException {
         ServerSocketChannel ssChannel = (ServerSocketChannel) key.channel();
         SocketChannel sc = ssChannel.accept();
         sc.configureBlocking(false);
-        sc.register(key.selector(), SelectionKey.OP_READ, ByteBuffer.allocateDirect(NetConfig.BUFFER_SIZE));
+        sc.register(key.selector(), SelectionKey.OP_READ | SelectionKey.OP_WRITE, null);
     }
 
-    public static void handleRead(SelectionKey key) throws IOException {
+    public void handleRead(SelectionKey key) throws IOException {
         SocketChannel sc = (SocketChannel) key.channel();
-        ByteBuffer buf = (ByteBuffer) key.attachment();
-        long bytesRead = sc.read(buf);
+        long bytesRead = sc.read(header);
+        ByteBuffer input = null;
+        if(!header.hasRemaining()){
+            int length =byteArrayToInt(header.array(),0);
+            header.clear();
+            input = ByteBuffer.allocate(length);
+        }
+        bytesRead = sc.read(input);
         while (bytesRead > 0) {
-            buf.flip();
-            while (buf.hasRemaining()) {
-                System.out.print((char) buf.get());
-            }
-            System.out.println();
-            buf.clear();
-            bytesRead = sc.read(buf);
+            bytesRead = sc.read(input);
         }
-        if (bytesRead == -1) {
-            sc.close();
-        }
+        input.flip();
+        System.out.println(Thread.currentThread().getName() + " received " + input.limit() + " response : " + maxString(new String(input.array()), 50));
+        input.clear();
     }
 
     public static void handleWrite(SelectionKey key) throws IOException {
-        ByteBuffer buf = (ByteBuffer) key.attachment();
+        ByteBuffer buf = ByteBuffer.allocate(4);
         buf.flip();
         SocketChannel sc = (SocketChannel) key.channel();
         while (buf.hasRemaining()) {
@@ -69,6 +70,7 @@ public class NioServer {
                 Iterator<SelectionKey> iter = selector.selectedKeys().iterator();
                 while (iter.hasNext()) {
                     SelectionKey key = iter.next();
+                    iter.remove();
                     if (key.isAcceptable()) {
                         handleAccept(key);
                     }
@@ -81,7 +83,6 @@ public class NioServer {
                     if (key.isConnectable()) {
                         System.out.println("isConnectable = true");
                     }
-                    iter.remove();
                 }
             }
 
