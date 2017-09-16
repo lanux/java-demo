@@ -22,13 +22,14 @@ public class NioServer extends IoStream{
         ServerSocketChannel ssChannel = (ServerSocketChannel) key.channel();
         SocketChannel sc = ssChannel.accept();
         sc.configureBlocking(false);
-        sc.register(key.selector(), SelectionKey.OP_READ | SelectionKey.OP_WRITE, null);
+        sc.register(key.selector(), SelectionKey.OP_READ | SelectionKey.OP_WRITE);
     }
 
     public void handleRead(SelectionKey key) throws IOException {
         SocketChannel sc = (SocketChannel) key.channel();
-        long bytesRead = sc.read(header);
+        long bytesRead;
         ByteBuffer input = null;
+        bytesRead = sc.read(header);
         if(!header.hasRemaining()){
             int length =byteArrayToInt(header.array(),0);
             header.clear();
