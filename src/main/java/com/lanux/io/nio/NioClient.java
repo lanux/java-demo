@@ -16,7 +16,7 @@ import java.util.Iterator;
 public class NioClient extends NioBasic implements Closeable {
 
     private Selector selector;
-    private SocketChannel channel;
+    public SocketChannel channel;
 
     public volatile boolean connected;
 

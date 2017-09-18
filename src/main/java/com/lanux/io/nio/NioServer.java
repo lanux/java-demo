@@ -51,8 +51,8 @@ public class NioServer extends NioBasic {
                         // 选择键无效
                         continue;
                     }
-//                    handleKey(key);
-                    executor.submit(() -> handleKey(key));
+                    handleKey(key);
+//                    executor.submit(() -> handleKey(key));
                 }
             }
 

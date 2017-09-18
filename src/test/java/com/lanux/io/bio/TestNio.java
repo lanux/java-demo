@@ -14,7 +14,8 @@ public class TestNio {
         Thread.sleep(2000);
         NioClient client = new NioClient();
         new Thread(() -> client.listen(),"nio client").start();
-        while (!client.connected){
+        while (!client.channel.isConnected()){
+            System.out.println("wait");
             Thread.sleep(100);
         }
         for (int i = 0; i < 100; i++) {
