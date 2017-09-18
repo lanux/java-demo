@@ -1,6 +1,7 @@
 package com.lanux.io.bio;
 
 import com.lanux.io.NetConfig;
+import com.lanux.tool.StringTool;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -13,19 +14,20 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Created by lanux on 2017/8/6.
  */
-public class BioServer extends IoStream {
+public class BioServer extends BioBasic {
 
     private ServerSocket serverSocket;
     private volatile boolean running;
 
-    private static ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
-        final AtomicInteger threadNumber = new AtomicInteger(1);
+    private static ExecutorService executor = Executors
+            .newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
+                final AtomicInteger threadNumber = new AtomicInteger(1);
 
-        @Override
-        public Thread newThread(Runnable r) {
-            return new Thread(r, "server-thread-" + threadNumber.getAndIncrement());
-        }
-    });
+                @Override
+                public Thread newThread(Runnable r) {
+                    return new Thread(r, "server-thread-" + threadNumber.getAndIncrement());
+                }
+            });
 
     public BioServer() {
         try {
@@ -58,7 +60,8 @@ public class BioServer extends IoStream {
                 byte[] bytes = readStream(socket.getInputStream());
                 if (bytes != null && bytes.length > 0) {
                     String s = new String(bytes);
-                    System.out.println(Thread.currentThread().getName() + " received " + bytes.length + " response : " + maxString(s, 50));
+                    System.out.println(Thread.currentThread().getName() + " received " + bytes.length + " response : " +
+                            StringTool.maxString(s, 50));
                     writeStream(socket.getOutputStream(), s.getBytes());
                 }
             }

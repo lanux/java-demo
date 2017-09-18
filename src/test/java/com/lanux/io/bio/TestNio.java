@@ -13,8 +13,12 @@ public class TestNio {
         new Thread(() -> new NioServer()).start();
         Thread.sleep(2000);
         NioClient client = new NioClient();
-        for (int i = 0; i < 100; i++) {
-            client.write(RandomStringUtils.randomAlphabetic(RandomUtils.nextInt(10,20)));
+        new Thread(() -> client.listen()).start();
+        while (client.connected){
+            for (int i = 0; i < 100; i++) {
+                client.write(RandomStringUtils.randomAlphabetic(RandomUtils.nextInt(10, 20)));
+            }
+            break;
         }
         client.close();
     }

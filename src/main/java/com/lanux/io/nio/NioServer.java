@@ -1,7 +1,8 @@
 package com.lanux.io.nio;
 
 import com.lanux.io.NetConfig;
-import com.lanux.io.bio.IoStream;
+import com.lanux.tool.ByteUtil;
+import com.lanux.tool.StringTool;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -15,8 +16,8 @@ import java.util.Iterator;
 /**
  * Created by lanux on 2017/9/16.
  */
-public class NioServer extends IoStream{
-    ByteBuffer header=ByteBuffer.allocate(4);
+public class NioServer {
+    ByteBuffer header = ByteBuffer.allocate(4);
 
     public void handleAccept(SelectionKey key) throws IOException {
         ServerSocketChannel ssChannel = (ServerSocketChannel) key.channel();
@@ -30,8 +31,8 @@ public class NioServer extends IoStream{
         long bytesRead;
         ByteBuffer input = null;
         bytesRead = sc.read(header);
-        if(!header.hasRemaining()){
-            int length =byteArrayToInt(header.array(),0);
+        if (!header.hasRemaining()) {
+            int length = ByteUtil.byteArrayToInt(header.array());
             header.clear();
             input = ByteBuffer.allocate(length);
         }
@@ -40,7 +41,8 @@ public class NioServer extends IoStream{
             bytesRead = sc.read(input);
         }
         input.flip();
-        System.out.println(Thread.currentThread().getName() + " received " + input.limit() + " response : " + maxString(new String(input.array()), 50));
+        System.out.println(Thread.currentThread().getName() + " received " + input.limit() + " response : " +
+                StringTool.maxString(new String(input.array()), 50));
         input.clear();
     }
 

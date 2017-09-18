@@ -1,44 +1,90 @@
 package com.lanux.io.nio;
 
+import com.lanux.io.IoStream;
 import com.lanux.io.NetConfig;
-import com.lanux.io.bio.IoStream;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.util.concurrent.TimeUnit;
+import java.util.Iterator;
 
 /**
  * Created by lanux on 2017/8/6.
  */
 public class NioClient extends IoStream implements Closeable {
-    SocketChannel socketChannel = null;
+
+    private Selector selector;
+    private SocketChannel channel;
+    public volatile boolean connected;
 
     public NioClient() {
         try {
-            socketChannel = SocketChannel.open();
-            socketChannel.configureBlocking(false);
-            socketChannel.connect(new InetSocketAddress(NetConfig.SERVER_IP, NetConfig.SERVER_PORT));
-            if (socketChannel.isConnectionPending()) {
-                socketChannel.finishConnect();
-            }
+            channel = SocketChannel.open();
+            channel.configureBlocking(false);
+            channel.connect(new InetSocketAddress(NetConfig.SERVER_IP, NetConfig.SERVER_PORT));
+            selector = Selector.open();
+            channel.register(selector, SelectionKey.OP_CONNECT);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
+    public void listen() {
+        while (true) {
+            try {
+                if (selector.select(NetConfig.SO_TIMEOUT) == 0) {
+                    continue;
+                }
+                Iterator<SelectionKey> ite = selector.selectedKeys().iterator();
+                while (ite.hasNext()) {
+                    SelectionKey key = ite.next();
+                    //删除已选的key，防止重复处理
+                    ite.remove();
+                    if (key.isConnectable()) {
+                        SocketChannel channel = (SocketChannel) key.channel();
+                        if (channel.isConnectionPending()) {
+                            channel.finishConnect();
+                            connected = true;
+                        }
+                        channel.configureBlocking(false);
+                        channel.register(selector, SelectionKey.OP_READ);
+                    } else if (key.isReadable()) {
+                        SocketChannel channel = (SocketChannel) key.channel();
+                        ByteBuffer buffer = ByteBuffer.allocate(1024);
+                        int read = channel.read(buffer);
+                        if (read != -1) {
+                            buffer.flip();
+                            int length = buffer.getInt();
+                            if (buffer.limit() - 4 == length) {
+                                byte[] data = buffer.array();
+                                String message = new String(data);
+                                System.out.println(" received " + length + " : " + maxString(message, 40));
+                            }
+                        }
+
+                    }
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     public void write(String value) throws IOException {
         byte[] bytes = value.getBytes();
-        System.out.println("client write " + bytes.length + " : " + maxString(value,50));
+        System.out.println("client write " + bytes.length + " : " + maxString(value, 50));
         ByteBuffer buffer = ByteBuffer.allocate(bytes.length);
         buffer.clear();
         buffer.put(bytes);
         buffer.flip();
-        socketChannel.write(ByteBuffer.wrap(intToByteArray(bytes.length)));
+        channel.write(ByteBuffer.wrap(intToByteArray(bytes.length)));
         while (buffer.hasRemaining()) {
-            socketChannel.write(buffer);
+            channel.write(buffer);
         }
 
     }
@@ -46,8 +92,8 @@ public class NioClient extends IoStream implements Closeable {
     @Override
     public void close() throws IOException {
         try {
-            if (socketChannel != null) {
-                socketChannel.close();
+            if (channel != null) {
+                channel.close();
             }
         } catch (IOException e) {
             e.printStackTrace();

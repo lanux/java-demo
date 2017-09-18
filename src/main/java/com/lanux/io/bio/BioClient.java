@@ -1,6 +1,7 @@
 package com.lanux.io.bio;
 
 import com.lanux.io.NetConfig;
+import com.lanux.tool.StringTool;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -9,7 +10,7 @@ import java.net.Socket;
 /**
  * Created by lanux on 2017/8/6.
  */
-public class BioClient extends IoStream implements Closeable {
+public class BioClient extends BioBasic implements Closeable {
 
     private Socket socket;
 
@@ -29,14 +30,14 @@ public class BioClient extends IoStream implements Closeable {
 
     public void write(String value) throws IOException {
         byte[] bytes = value.getBytes();
-        System.out.println("client write " + bytes.length + " : " + maxString(value,50));
+        System.out.println("client write " + bytes.length + " : " + StringTool.maxString(value, 50));
         super.writeStream(socket.getOutputStream(), bytes);
     }
 
     public String read() throws IOException {
         byte[] bytes = super.readStream(socket.getInputStream());
         String s = new String(bytes);
-        System.out.println("client read " + bytes.length + " : " + maxString(s,50));
+        System.out.println("client read " + bytes.length + " : " + StringTool.maxString(s, 50));
         return s;
     }
 }
