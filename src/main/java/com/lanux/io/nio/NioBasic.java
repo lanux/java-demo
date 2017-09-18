@@ -54,7 +54,7 @@ public class NioBasic {
     public void writeMsg(SocketChannel sc, String value) throws IOException {
         byte[] bytes = value.getBytes();
         System.out.println(
-                Thread.currentThread().getName() + "write " + bytes.length + " : " + StringTool.maxString(value, 50));
+                Thread.currentThread().getName() + " write " + bytes.length + " : " + StringTool.maxString(value, 50));
         ByteBuffer buf = ByteBuffer.allocate(bytes.length + 4);
         buf.put(ByteUtil.intToByteArray(bytes.length));
         buf.put(bytes);
