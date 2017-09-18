@@ -96,6 +96,9 @@ public class NioServer extends NioBasic {
                 handleWrite(key);
                 key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);//取消注册写监听
             }
+            if (key.isConnectable()) {
+                System.out.println("is connect able");
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -18,6 +18,8 @@ public class NioClient extends NioBasic implements Closeable {
     private Selector selector;
     private SocketChannel channel;
 
+    public volatile boolean connected;
+
     public NioClient() {
         try {
             channel = SocketChannel.open();
@@ -43,12 +45,13 @@ public class NioClient extends NioBasic implements Closeable {
                     ite.remove();
                     if (key.isValid() && key.isConnectable()) {
                         SocketChannel channel = (SocketChannel) key.channel();
-                        if (channel.finishConnect()) {
-                            channel.configureBlocking(false)
-                                    .register(selector, SelectionKey.OP_READ);
-                        } else{
-                            System.exit(1);// 连接失败，进程退出
+                        if (channel.isConnectionPending()) {
+                            channel.finishConnect();
                         }
+                        channel.configureBlocking(false)
+                                .register(selector, SelectionKey.OP_READ);
+                        connected = true;
+
                     } else if (key.isReadable()) {
                         SocketChannel channel = (SocketChannel) key.channel();
                         handleRead(channel);
@@ -71,6 +74,7 @@ public class NioClient extends NioBasic implements Closeable {
     @Override
     public void close() throws IOException {
         try {
+            connected = false;
             if (channel != null) {
                 channel.close();
             }
