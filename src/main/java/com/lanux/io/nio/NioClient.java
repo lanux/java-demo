@@ -1,7 +1,8 @@
 package com.lanux.io.nio;
 
-import com.lanux.io.IoStream;
 import com.lanux.io.NetConfig;
+import com.lanux.tool.ByteUtil;
+import com.lanux.tool.StringTool;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -15,7 +16,7 @@ import java.util.Iterator;
 /**
  * Created by lanux on 2017/8/6.
  */
-public class NioClient extends IoStream implements Closeable {
+public class NioClient extends NioBasic implements Closeable {
 
     private Selector selector;
     private SocketChannel channel;
@@ -54,18 +55,7 @@ public class NioClient extends IoStream implements Closeable {
                         channel.register(selector, SelectionKey.OP_READ);
                     } else if (key.isReadable()) {
                         SocketChannel channel = (SocketChannel) key.channel();
-                        ByteBuffer buffer = ByteBuffer.allocate(1024);
-                        int read = channel.read(buffer);
-                        if (read != -1) {
-                            buffer.flip();
-                            int length = buffer.getInt();
-                            if (buffer.limit() - 4 == length) {
-                                byte[] data = buffer.array();
-                                String message = new String(data);
-                                System.out.println(" received " + length + " : " + maxString(message, 40));
-                            }
-                        }
-
+                        String value = handleRead(channel);
                     }
                 }
 
@@ -76,17 +66,7 @@ public class NioClient extends IoStream implements Closeable {
     }
 
     public void write(String value) throws IOException {
-        byte[] bytes = value.getBytes();
-        System.out.println("client write " + bytes.length + " : " + maxString(value, 50));
-        ByteBuffer buffer = ByteBuffer.allocate(bytes.length);
-        buffer.clear();
-        buffer.put(bytes);
-        buffer.flip();
-        channel.write(ByteBuffer.wrap(intToByteArray(bytes.length)));
-        while (buffer.hasRemaining()) {
-            channel.write(buffer);
-        }
-
+        writeMsg(channel,value);
     }
 
     @Override

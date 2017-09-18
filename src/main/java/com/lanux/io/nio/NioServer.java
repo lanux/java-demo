@@ -1,64 +1,37 @@
 package com.lanux.io.nio;
 
 import com.lanux.io.NetConfig;
-import com.lanux.tool.ByteUtil;
-import com.lanux.tool.StringTool;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by lanux on 2017/9/16.
  */
-public class NioServer {
-    ByteBuffer header = ByteBuffer.allocate(4);
+public class NioServer extends NioBasic {
+    Selector selector = null;
+    ServerSocketChannel ssc = null;
 
-    public void handleAccept(SelectionKey key) throws IOException {
-        ServerSocketChannel ssChannel = (ServerSocketChannel) key.channel();
-        SocketChannel sc = ssChannel.accept();
-        sc.configureBlocking(false);
-        sc.register(key.selector(), SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-    }
+    private static ExecutorService executor = Executors
+            .newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
+                final AtomicInteger threadNumber = new AtomicInteger(1);
 
-    public void handleRead(SelectionKey key) throws IOException {
-        SocketChannel sc = (SocketChannel) key.channel();
-        long bytesRead;
-        ByteBuffer input = null;
-        bytesRead = sc.read(header);
-        if (!header.hasRemaining()) {
-            int length = ByteUtil.byteArrayToInt(header.array());
-            header.clear();
-            input = ByteBuffer.allocate(length);
-        }
-        bytesRead = sc.read(input);
-        while (bytesRead > 0) {
-            bytesRead = sc.read(input);
-        }
-        input.flip();
-        System.out.println(Thread.currentThread().getName() + " received " + input.limit() + " response : " +
-                StringTool.maxString(new String(input.array()), 50));
-        input.clear();
-    }
-
-    public static void handleWrite(SelectionKey key) throws IOException {
-        ByteBuffer buf = ByteBuffer.allocate(4);
-        buf.flip();
-        SocketChannel sc = (SocketChannel) key.channel();
-        while (buf.hasRemaining()) {
-            sc.write(buf);
-        }
-        buf.compact();
-    }
+                @Override
+                public Thread newThread(Runnable r) {
+                    return new Thread(r, "nio-server-thread-" + threadNumber.getAndIncrement());
+                }
+            });
 
     public NioServer() {
-        Selector selector = null;
-        ServerSocketChannel ssc = null;
         try {
             selector = Selector.open();
             ssc = ServerSocketChannel.open();
@@ -70,22 +43,15 @@ public class NioServer {
                 if (selector.select(NetConfig.SO_TIMEOUT) == 0) {
                     continue;
                 }
-                Iterator<SelectionKey> iter = selector.selectedKeys().iterator();
-                while (iter.hasNext()) {
-                    SelectionKey key = iter.next();
-                    iter.remove();
-                    if (key.isAcceptable()) {
-                        handleAccept(key);
+                Iterator<SelectionKey> it = selector.selectedKeys().iterator();
+                while (it.hasNext()) {
+                    SelectionKey key = it.next();
+                    it.remove();
+                    if (!key.isValid()) {
+                        // 选择键无效
+                        continue;
                     }
-                    if (key.isReadable()) {
-                        handleRead(key);
-                    }
-                    if (key.isWritable() && key.isValid()) {
-                        handleWrite(key);
-                    }
-                    if (key.isConnectable()) {
-                        System.out.println("isConnectable = true");
-                    }
+                    executor.submit(() -> handleKey(key));
                 }
             }
 
@@ -102,6 +68,35 @@ public class NioServer {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    private void handleKey(SelectionKey key) {
+        try {
+            if (key.isAcceptable()) {
+                ServerSocketChannel serverSocketChannel = (ServerSocketChannel) key.channel();
+                serverSocketChannel
+                        .accept()
+                        .configureBlocking(false)
+                        .register(selector, SelectionKey.OP_READ);
+//                        .register(selector,SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+                //一般来说，你不应该注册写事件。
+                // 写操作的就绪条件为底层缓冲区有空闲空间，而写缓冲区绝大部分时间都是有空闲空间的，所以当你注册写事件后，写操作一直是就绪的，选择处理线程全占用整个CPU资源。
+                // 所以，只有当你确实有数据要写时再注册写操作，并在写完以后马上取消注册。
+                //  key.interestOps(SelectionKey.OP_WRITE);  //注册写监听
+                //  key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE); //取消注册写监听
+            }
+            if (key.isReadable()) {
+                SocketChannel sc = (SocketChannel) key.channel();
+                String value = handleRead(sc);
+                writeMsg(sc, value);
+            }
+            if (key.isWritable()) {
+                handleWrite(key);
+                key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);//取消注册写监听
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

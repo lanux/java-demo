@@ -25,7 +25,7 @@ public class TestBio {
             System.out.println();
             Thread.sleep(2000);
 
-            for (int j = 0; j < 5; j++) {
+            for (int j = 0; j < 10; j++) {
                 client.write(RandomStringUtils.randomAlphabetic(RandomUtils.nextInt(2000, 10000)));
                 client.read();
                 System.out.println();

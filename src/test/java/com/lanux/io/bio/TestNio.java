@@ -14,11 +14,11 @@ public class TestNio {
         Thread.sleep(2000);
         NioClient client = new NioClient();
         new Thread(() -> client.listen()).start();
-        while (client.connected){
+        Thread.sleep(2000);
+        if (client.connected){
             for (int i = 0; i < 100; i++) {
-                client.write(RandomStringUtils.randomAlphabetic(RandomUtils.nextInt(10, 20)));
+                client.write(RandomStringUtils.randomAlphabetic(RandomUtils.nextInt(100, 2000)));
             }
-            break;
         }
         client.close();
     }
