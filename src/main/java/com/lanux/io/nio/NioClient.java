@@ -1,13 +1,10 @@
 package com.lanux.io.nio;
 
 import com.lanux.io.NetConfig;
-import com.lanux.tool.ByteUtil;
-import com.lanux.tool.StringTool;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -20,7 +17,6 @@ public class NioClient extends NioBasic implements Closeable {
 
     private Selector selector;
     private SocketChannel channel;
-    public volatile boolean connected;
 
     public NioClient() {
         try {
@@ -45,17 +41,20 @@ public class NioClient extends NioBasic implements Closeable {
                     SelectionKey key = ite.next();
                     //删除已选的key，防止重复处理
                     ite.remove();
-                    if (key.isConnectable()) {
+                    if (key.isValid() && key.isConnectable()) {
                         SocketChannel channel = (SocketChannel) key.channel();
-                        if (channel.isConnectionPending()) {
-                            channel.finishConnect();
-                            connected = true;
+                        if (channel.finishConnect()) {
+                            channel.configureBlocking(false)
+                                    .register(selector, SelectionKey.OP_READ);
+                        } else{
+                            System.exit(1);// 连接失败，进程退出
                         }
-                        channel.configureBlocking(false);
-                        channel.register(selector, SelectionKey.OP_READ);
                     } else if (key.isReadable()) {
                         SocketChannel channel = (SocketChannel) key.channel();
-                        String value = handleRead(channel);
+                        handleRead(channel);
+                    } else if (key.isWritable()) {
+                        handleWrite(key);
+//                        key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE); //取消注册写监听
                     }
                 }
 
@@ -66,7 +65,7 @@ public class NioClient extends NioBasic implements Closeable {
     }
 
     public void write(String value) throws IOException {
-        writeMsg(channel,value);
+        writeMsg(channel, value);
     }
 
     @Override

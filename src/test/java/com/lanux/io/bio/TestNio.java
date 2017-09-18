@@ -10,15 +10,13 @@ import org.apache.commons.lang3.RandomUtils;
  */
 public class TestNio {
     public static void main(String[] args) throws Exception {
-        new Thread(() -> new NioServer()).start();
+        new Thread(() -> new NioServer(),"nio server").start();
         Thread.sleep(2000);
         NioClient client = new NioClient();
-        new Thread(() -> client.listen()).start();
-        Thread.sleep(2000);
-        if (client.connected){
-            for (int i = 0; i < 100; i++) {
-                client.write(RandomStringUtils.randomAlphabetic(RandomUtils.nextInt(100, 2000)));
-            }
+        new Thread(() -> client.listen(),"nio client").start();
+        Thread.sleep(10000);
+        for (int i = 0; i < 100; i++) {
+            client.write(RandomStringUtils.randomAlphabetic(RandomUtils.nextInt(100, 2000)));
         }
         client.close();
     }
