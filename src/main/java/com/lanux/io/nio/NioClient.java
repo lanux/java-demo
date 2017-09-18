@@ -48,8 +48,7 @@ public class NioClient extends NioBasic implements Closeable {
                         if (channel.isConnectionPending()) {
                             channel.finishConnect();
                         }
-                        channel.configureBlocking(false)
-                                .register(selector, SelectionKey.OP_READ);
+                        channel.register(selector, SelectionKey.OP_READ);
                         connected = true;
 
                     } else if (key.isReadable()) {

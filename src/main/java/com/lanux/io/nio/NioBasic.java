@@ -23,7 +23,7 @@ public class NioBasic {
     public String handleRead(SocketChannel sc) throws IOException {
         ByteBuffer header = ByteBuffer.allocate(4);
         while (header.hasRemaining()) {
-            int read = sc.read(header);
+            sc.read(header);
         }
         header.flip();//写=>读
         int length = ByteUtil.byteArrayToInt(header.array());
@@ -32,7 +32,7 @@ public class NioBasic {
         while (input.hasRemaining()) {
             sc.read(input);
         }
-        input.flip();
+        input.flip();//写=>读
         String value = new String(input.array());
         System.out.println(
                 Thread.currentThread().getName() + " received " + input.limit() + " : " + StringTool.maxString(
@@ -58,7 +58,7 @@ public class NioBasic {
         ByteBuffer buf = ByteBuffer.allocate(bytes.length + 4);
         buf.put(ByteUtil.intToByteArray(bytes.length));
         buf.put(bytes);
-        buf.flip();
+        buf.flip();//写=>读
         while (buf.hasRemaining()) {
             sc.write(buf);
         }
