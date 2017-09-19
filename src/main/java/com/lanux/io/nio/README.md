@@ -430,3 +430,114 @@ channel.connect(new InetSocketAddress("example.com", 80));
 ```
 
 ## Buffer
+当我们需要与 NIO Channel 进行交互时, 我们就需要使用到 NIO Buffer, 即数据从 Buffer读取到 Channel 中, 并且从 Channel 中写入到 Buffer 中.
+实际上, 一个 Buffer 其实就是一块内存区域, 我们可以在这个内存区域中进行数据的读写. NIO Buffer 其实是这样的内存块的一个封装, 并提供了一些操作方法让我们能够方便地进行数据的读写.
+Buffer 类型有:
+- ByteBuffer
+- CharBuffer
+- DoubleBuffer
+- FloatBuffer
+- IntBuffer
+- LongBuffer
+- ShortBuffer
+这些 Buffer 覆盖了能从 IO 中传输的所有的 Java 基本数据类型.
+
+为了理解Buffer的工作原理，需要熟悉它的三个属性：
+
+- capacity代表这块Buffer的容量(DoubleBuffer, 其Capacity是100, 那么我们最多可以写入100个double值)
+- position代表当前可读（或写）的位置，初始的position值为0，每读/写一单位数据position的值递增1，直到limit结束，最大可为capacity – 1。
+- limit代表本次读（或写）的右边界位置，表示你最多能对Buffer读（或写）多少数据，初始limit的值等于Buffer的capacity
+
+> 其中 position 和 limit 的含义与 Buffer 处于读模式或写模式有关, 而 capacity 的含义与 Buffer 所处的模式无关.
+capacity
+
+#### 模式切换:
+
+1. 将 NIO Buffer 转换为读模式
+  - 调用 Buffer.flip()方法
+2. 将 Buffer 转换为写模式
+  - Buffer.clear() 清空整个buffer
+  - Buffer.compact() 清空已读部分
+
+#### 关于 Direct Buffer 和 Non-Direct Buffer 的区别
+##### Direct Buffer:
+所分配的内存不在 JVM 堆上, 不受 GC 的管理.(但是 Direct Buffer 的 Java 对象是由 GC 管理的, 因此当发生 GC, 对象被回收时, Direct Buffer 也会被释放)
+因为 Direct Buffer 不在 JVM 堆上分配, 因此 Direct Buffer 对应用程序的内存占用的影响就不那么明显(实际上还是占用了这么多内存, 但是 JVM 不好统计到非 JVM 管理的内存.)
+申请和释放 Direct Buffer 的开销比较大. 因此正确的使用 Direct Buffer 的方式是在初始化时申请一个 Buffer, 然后不断复用此 buffer, 在程序结束后才释放此 buffer.
+使用 Direct Buffer 时, 当进行一些底层的系统 IO 操作时, 效率会比较高, 因为此时 JVM 不需要拷贝 buffer 中的内存到中间临时缓冲区中.
+##### Non-Direct Buffer:
+直接在 JVM 堆上进行内存的分配, 本质上是 byte[] 数组的封装.
+因为 Non-Direct Buffer 在 JVM 堆中, 因此当进行操作系统底层 IO 操作中时, 会将此 buffer 的内存复制到中间临时缓冲区中. 因此 Non-Direct Buffer 的效率就较低.
+
+#### 写入数据到 Buffer
+```
+int bytesRead = inChannel.read(buf); //read into buffer.
+buf.put(127);
+从 Buffer 中读取数据
+//read from buffer into channel.
+int bytesWritten = inChannel.write(buf);
+byte aByte = buf.get();
+```
+#### 重置 position
+Buffer.rewind()方法可以重置 position 的值为0, 因此我们可以重新读取/写入 Buffer 了.
+如果是读模式, 则重置的是读模式的 position, 如果是写模式, 则重置的是写模式的 position.
+例如:
+
+> rewind() 主要针对于读模式. 在读模式时, 读取到 limit 后, 可以调用 rewind() 方法, 将读 position 置为0.
+
+#### mark()和 reset()
+我们可以通过调用 Buffer.mark()将当前的 position 的值保存起来, 随后可以通过调用 Buffer.reset()方法将 position 的值回复回来.
+
+#### flip, rewind, clear, compact 的区别
+
+flip 方法源码
+```
+public final Buffer flip() {
+    limit = position;
+    position = 0;
+    mark = -1;
+    return this;
+}
+```
+Buffer 的读/写模式共用一个 position 和 limit 变量.
+当从写模式变为读模式时, 原先的 写 position 就变成了读模式的 limit.
+
+rewind 方法源码
+```
+public final Buffer rewind() {
+    position = 0;
+    mark = -1;
+    return this;
+}
+```
+rewind, 即倒带, 这个方法仅仅是将 position 置为0.
+
+clear 方法源码:
+```
+public final Buffer clear() {
+    position = 0;
+    limit = capacity;
+    mark = -1;
+    return this;
+}
+```
+根据源码我们可以知道, clear 将 positin 设置为0, 将 limit 设置为 capacity.
+
+compact 方法源码：
+```
+public ByteBuffer compact() {
+    System.arraycopy(hb, ix(position()), hb, ix(0), remaining());
+    position(remaining());
+    limit(capacity());
+    discardMark();
+    return this;
+}
+```
+#### Buffer 的比较
+我们可以通过 equals() 或 compareTo() 方法比较两个 Buffer, 当且仅当如下条件满足时, 两个 Buffer 是相等的:
+
+- 两个 Buffer 是相同类型的
+- 两个 Buffer 的剩余的数据个数是相同的
+- 两个 Buffer 的剩余的数据都是相同的.
+
+通过上述条件我们可以发现, 比较两个 Buffer 时, 并不是 Buffer 中的每个元素都进行比较, 而是比较 Buffer 中剩余的元素.
