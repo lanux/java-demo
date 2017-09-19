@@ -35,7 +35,7 @@ public class NioBasic {
         input.flip();//写=>读
         String value = new String(input.array());
         System.out.println(
-                Thread.currentThread().getName() + " received " + input.limit() + " : " + StringTool.maxString(
+                Thread.currentThread().getName() + " received : " + StringTool.maxString(
                         value, 50));
         input.clear();
         return value;
