@@ -1,4 +1,4 @@
-# Linux 5种IO模型 说明
+# Linux 5种IO模型
 
 #### 一、概念
 网络IO的本质是socket的读取，socket在linux系统被抽象为流，IO可以理解为对流的操作。
