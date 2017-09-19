@@ -12,7 +12,7 @@ import java.net.Socket;
  */
 public class BioClient extends BioBasic implements Closeable {
 
-    private Socket socket;
+    public Socket socket;
 
     public BioClient init() throws Exception {
         socket = new Socket(NetConfig.SERVER_IP, NetConfig.SERVER_PORT);
