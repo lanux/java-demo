@@ -1,6 +1,7 @@
 package com.lanux.io.nio;
 
 import com.lanux.io.NetConfig;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -9,15 +10,32 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
+import java.util.Queue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by lanux on 2017/9/16.
  */
-public class NioServer extends NioBasic {
+public class NioServer2 extends NioBasic {
     Selector selector = null;
     ServerSocketChannel ssc = null;
 
-    public NioServer() {
+    private Queue<String> queue;
+    private static ExecutorService executor = Executors
+            .newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
+                final AtomicInteger threadNumber = new AtomicInteger(1);
+
+                @Override
+                public Thread newThread(Runnable r) {
+                    return new Thread(r, "nio-server-thread-" + threadNumber.getAndIncrement());
+                }
+            });
+
+    public NioServer2(Queue<String> queue) {
+        this.queue = queue;
         try {
             selector = Selector.open();
             ssc = ServerSocketChannel.open();
@@ -37,9 +55,8 @@ public class NioServer extends NioBasic {
                         // 选择键无效
                         continue;
                     }
-                    handleKey(key);
                     // 这里不能用异步
-//                    executor.submit(()-> handleKey(key));
+                    handleKey(key);
                 }
             }
 
@@ -66,7 +83,7 @@ public class NioServer extends NioBasic {
                 serverSocketChannel
                         .accept()
                         .configureBlocking(false)
-                        .register(selector, SelectionKey.OP_READ);
+                        .register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
 //                        .register(selector,SelectionKey.OP_READ | SelectionKey.OP_WRITE);
                 //一般来说，你不应该注册写事件。
                 // 写操作的就绪条件为底层缓冲区有空闲空间，而写缓冲区绝大部分时间都是有空闲空间的，所以当你注册写事件后，写操作一直是就绪的，选择处理线程全占用整个CPU资源。
@@ -77,11 +94,20 @@ public class NioServer extends NioBasic {
             if (key.isReadable()) {
                 SocketChannel sc = (SocketChannel) key.channel();
                 String value = handleRead(sc);
-                writeMsg(sc, value);
+                if (StringUtils.isBlank(value)) {
+                    return;
+                }
+                executor.submit(() -> {
+                    //里面可以写一些负责的处理逻辑
+                    queue.offer(value);
+                });
             }
             if (key.isWritable()) {
-                handleWrite(key);
-                key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);//取消注册写监听
+                String value = queue.poll();
+                if (StringUtils.isNotBlank(value)) {
+                    writeMsg((SocketChannel) key.channel(), value);
+                }
+                //key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);//取消注册写监听
             }
             if (key.isConnectable()) {
                 System.out.println("is connect able");
