@@ -1,8 +1,8 @@
 # java NIO 核心概念
 
 - [Selector](https://github.com/lanux/java-demo/tree/master/src/main/java/com/lanux/io/nio#selector选择器)
-- [Channel](https://github.com/lanux/java-demo/tree/master/src/main/java/com/lanux/io/nio#Channel)
-- [Buffer]()
+- [Channel](https://github.com/lanux/java-demo/tree/master/src/main/java/com/lanux/io/nio#channel)
+- [Buffer](https://github.com/lanux/java-demo/tree/master/src/main/java/com/lanux/io/nio#buffer)
 
 ## Selector(选择器)
 - [获取就绪事件](https://github.com/lanux/java-demo/tree/master/src/main/java/com/lanux/io/nio#一获取就绪事件)
@@ -428,3 +428,5 @@ int bytesSent = channel.send(buf, new InetSocketAddress("example.com", 80));
 ```
 channel.connect(new InetSocketAddress("example.com", 80));
 ```
+
+## Buffer
