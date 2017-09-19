@@ -263,9 +263,9 @@ java Stream 和 NIO Channel 对比
 
 Channel 类型有:
 - FileChannel, 文件操作
-- SocketChannel, TCP 操作
-- ServerSocketChannel, TCP 操作, 使用在服务器端.
-- DatagramChannel, UDP 操作
+- [SocketChannel](https://github.com/lanux/java-demo/tree/master/src/main/java/com/lanux/io/nio#socketchannel), TCP 操作
+- [ServerSocketChannel](https://github.com/lanux/java-demo/tree/master/src/main/java/com/lanux/io/nio#serversocketchannel), TCP 操作, 使用在服务器端.
+- [DatagramChannel](https://github.com/lanux/java-demo/tree/master/src/main/java/com/lanux/io/nio#datagramchannel), UDP 操作
 
 ```
 public static void main( String[] args ) throws Exception
