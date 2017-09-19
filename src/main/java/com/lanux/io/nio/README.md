@@ -1,10 +1,16 @@
 # java NIO 核心概念
 
-- Selector
-- Channel
-- Buffer
+- [Selector](https://github.com/lanux/java-demo/tree/master/src/main/java/com/lanux/io/nio#selector选择器)
+- [Channel]()
+- [Buffer]()
 
 ## Selector(选择器)
+- [获取就绪事件](https://github.com/lanux/java-demo/tree/master/src/main/java/com/lanux/io/nio#一获取就绪事件)
+- [SelectionKey]()
+- [Selector 的基本使用流程]()
+- [close and wakeup]()
+- [demo]()
+
 Selector(选择器)是Java NIO中能够检测一到多个NIO channel，并能够知晓通道是否为诸如读/写事件做好准备的组件。这样，一个单独的线程可以管理多个channel，从而管理多个网络连接。
 
 **例1**
