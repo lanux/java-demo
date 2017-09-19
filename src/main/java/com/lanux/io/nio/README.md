@@ -1,15 +1,15 @@
 # java NIO 核心概念
 
 - [Selector](https://github.com/lanux/java-demo/tree/master/src/main/java/com/lanux/io/nio#selector选择器)
-- [Channel]()
+- [Channel](https://github.com/lanux/java-demo/tree/master/src/main/java/com/lanux/io/nio#Channel)
 - [Buffer]()
 
 ## Selector(选择器)
 - [获取就绪事件](https://github.com/lanux/java-demo/tree/master/src/main/java/com/lanux/io/nio#一获取就绪事件)
-- [SelectionKey]()
-- [Selector 的基本使用流程]()
-- [close and wakeup]()
-- [demo]()
+- [SelectionKey](https://github.com/lanux/java-demo/tree/master/src/main/java/com/lanux/io/nio#二selectionkey)
+- [Selector 的基本使用流程](https://github.com/lanux/java-demo/tree/master/src/main/java/com/lanux/io/nio#三selector-的基本使用流程)
+- [close and wakeup](https://github.com/lanux/java-demo/tree/master/src/main/java/com/lanux/io/nio#四close-or-wakeup-selector)
+- [demo](https://github.com/lanux/java-demo/tree/master/src/main/java/com/lanux/io/nio#五完整的-selector-例子)
 
 Selector(选择器)是Java NIO中能够检测一到多个NIO channel，并能够知晓通道是否为诸如读/写事件做好准备的组件。这样，一个单独的线程可以管理多个channel，从而管理多个网络连接。
 
@@ -251,4 +251,180 @@ public class NioEchoServer {
         }
     }
 }
+```
+
+## Channel
+通常来说, 所有的 NIO 的 I/O 操作都是从 Channel 开始的. 一个 channel 类似于一个 stream.
+java Stream 和 NIO Channel 对比
+
+1. channel 既可以从通道中读取数据，又可以写数据到通道。但Stream的读写通常是单向的。
+1. Channel 可以非阻塞读写, 而 Stream 是阻塞的同步读写.
+1. Channel 总是从 Buffer 中读取数据, 或将数据写入到 Buffer 中.
+
+Channel 类型有:
+- FileChannel, 文件操作
+- SocketChannel, TCP 操作
+- ServerSocketChannel, TCP 操作, 使用在服务器端.
+- DatagramChannel, UDP 操作
+
+```
+public static void main( String[] args ) throws Exception
+{
+    RandomAccessFile aFile = new RandomAccessFile("/Users/xiongyongshun/settings.xml", "rw");
+    FileChannel inChannel = aFile.getChannel();
+
+    ByteBuffer buf = ByteBuffer.allocate(48);
+
+    int bytesRead = inChannel.read(buf);
+    while (bytesRead != -1) {
+        buf.flip();
+
+        while(buf.hasRemaining()){
+            System.out.print((char) buf.get());
+        }
+
+        buf.clear();
+        bytesRead = inChannel.read(buf);
+    }
+    aFile.close();
+}
+```
+
+> 注意, FileChannel 不能设置为非阻塞模式.
+
+
+#### SocketChannel
+
+SocketChannel 是一个客户端用来进行 TCP 连接的 Channel.
+创建一个 SocketChannel 的方法有两种:
+- 打开一个 SocketChannel, 然后将其连接到某个服务器中
+- 当一个 ServerSocketChannel 接受到连接请求时, 会返回一个 SocketChannel 对象.
+##### 打开 SocketChannel
+```
+SocketChannel socketChannel = SocketChannel.open();
+socketChannel.connect(new InetSocketAddress("http://example.com", 80));
+```
+##### 关闭
+```
+socketChannel.close();
+```
+##### 读取数据
+```
+ByteBuffer buf = ByteBuffer.allocate(48);
+int bytesRead = socketChannel.read(buf);
+```
+
+> read()返回 -1, 那么表示连接中断了.
+
+##### 写入数据
+```
+String newData = "New String to write to file..." + System.currentTimeMillis();
+
+ByteBuffer buf = ByteBuffer.allocate(48);
+buf.clear();
+buf.put(newData.getBytes());
+
+buf.flip();
+
+while(buf.hasRemaining()) {
+    channel.write(buf);
+}
+```
+
+##### 非阻塞模式
+
+我们可以设置 SocketChannel 为异步模式, 这样我们的 connect, read, write 都是异步的了.
+
+```
+socketChannel.configureBlocking(false);
+socketChannel.connect(new InetSocketAddress("http://example.com", 80));
+
+while(! socketChannel.finishConnect() ){
+    //wait, or do something else...
+}
+```
+在非阻塞模式中, 或许连接还没有建立, connect 方法就返回了, 因此我们需要检查当前是否是连接到了主机, 因此通过一个 while 循环来判断.
+
+
+#### ServerSocketChannel
+
+ServerSocketChannel 顾名思义, 是用在服务器为端的, 可以监听客户端的 TCP 连接, 例如:
+```
+ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
+serverSocketChannel.socket().bind(new InetSocketAddress(9999));
+while(true){
+    SocketChannel socketChannel =
+            serverSocketChannel.accept();
+
+    //do something with socketChannel...
+}
+```
+
+##### 打开 关闭
+```
+ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
+serverSocketChannel.close();
+```
+##### 监听连接
+
+我们可以使用ServerSocketChannel.accept()方法来监听客户端的 TCP 连接请求, accept()方法会阻塞, 直到有连接到来, 当有连接时, 这个方法会返回一个 SocketChannel 对象:
+```
+while(true){
+    SocketChannel socketChannel =
+            serverSocketChannel.accept();
+
+    //do something with socketChannel...
+}
+```
+##### 非阻塞模式
+
+在非阻塞模式下, accept()是非阻塞的, 因此如果此时没有连接到来, 那么 accept()方法会返回null:
+```
+ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
+
+serverSocketChannel.socket().bind(new InetSocketAddress(9999));
+serverSocketChannel.configureBlocking(false);
+
+while(true){
+    SocketChannel socketChannel =
+            serverSocketChannel.accept();
+
+    if(socketChannel != null){
+        //do something with socketChannel...
+        }
+}
+```
+
+#### DatagramChannel
+DatagramChannel 是用来处理 UDP 连接的.
+
+##### 打开
+```
+DatagramChannel channel = DatagramChannel.open();
+channel.socket().bind(new InetSocketAddress(9999));
+```
+##### 读取数据
+```
+ByteBuffer buf = ByteBuffer.allocate(48);
+buf.clear();
+
+channel.receive(buf);
+```
+##### 发送数据
+```
+String newData = "New String to write to file..."
+                    + System.currentTimeMillis();
+
+ByteBuffer buf = ByteBuffer.allocate(48);
+buf.clear();
+buf.put(newData.getBytes());
+buf.flip();
+
+int bytesSent = channel.send(buf, new InetSocketAddress("example.com", 80));
+```
+##### 连接到指定地址
+
+因为 UDP 是非连接的, 因此这个的 connect 并不是像 TCP 一样真正意义上的连接, 而是它会将 DatagramChannel 锁住, 因此我们仅仅可以从指定的地址中读取或写入数据.
+```
+channel.connect(new InetSocketAddress("example.com", 80));
 ```
