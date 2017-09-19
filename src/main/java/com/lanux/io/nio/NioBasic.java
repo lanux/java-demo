@@ -23,14 +23,14 @@ public class NioBasic {
     public String handleRead(SocketChannel sc) throws IOException {
         ByteBuffer header = ByteBuffer.allocate(4);
         while (header.hasRemaining()) {
-            sc.read(header);
+            int read = sc.read(header); // read()返回 -1, 那么表示连接中断了.
         }
         header.flip();//写=>读
         int length = ByteUtil.byteArrayToInt(header.array());
         header.clear();
         ByteBuffer input = ByteBuffer.allocate(length);
         while (input.hasRemaining()) {
-            sc.read(input);
+            sc.read(input);// read()返回 -1, 那么表示连接中断了.
         }
         input.flip();//写=>读
         String value = new String(input.array());

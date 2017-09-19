@@ -2,27 +2,34 @@ package com.lanux.io.netty;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.netty.handler.codec.ByteToMessageDecoder;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
  * https://github.com/linweiliang451791119/NIO/blob/master/nio/src/chapter13/NettyMarshallingEncoder.java
  * Created by lanux on 2017/9/16.
  */
-public class NettyMessageDecoder extends LengthFieldBasedFrameDecoder {
+public class NettyMessageDecoder extends ByteToMessageDecoder {
 
-
-    public NettyMessageDecoder(int maxFrameLength, int lengthFieldOffset,
-                               int lengthFieldLength,int lengthAdjustment, int initialBytesToStrip) {
-        super(maxFrameLength, lengthFieldOffset, lengthFieldLength, lengthAdjustment, initialBytesToStrip);
+    public NettyMessageDecoder() {
+        super();
     }
 
+    @Override
+    protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> out)
+            throws Exception {
+        Object decoded = this.decode(channelHandlerContext, byteBuf);
+        if (decoded != null) {
+            out.add(decoded);
+        }
+    }
 
-    public Object decode(ChannelHandlerContext ctx, ByteBuf in) throws Exception{
-        ByteBuf frame = (ByteBuf)super.decode(ctx, in);
-        if(frame == null){
+    public Object decode(ChannelHandlerContext ctx, ByteBuf in) throws Exception {
+        ByteBuf frame = in;
+        if (in.readableBytes()< 4) {
             return null;
         }
 
@@ -35,12 +42,12 @@ public class NettyMessageDecoder extends LengthFieldBasedFrameDecoder {
         header.setPriority(frame.readByte());
 
         int size = frame.readInt();
-        if(size > 0){
+        if (size > 0) {
             Map<String, Object> attach = new HashMap<String, Object>(size);
             int keySize = 0;
             byte[] keyArray = null;
             String key = null;
-            for(int i=0; i<size; i++){
+            for (int i = 0; i < size; i++) {
                 keySize = frame.readInt();
                 keyArray = new byte[keySize];
                 in.readBytes(keyArray);
@@ -51,7 +58,7 @@ public class NettyMessageDecoder extends LengthFieldBasedFrameDecoder {
             keyArray = null;
             header.setAttachment(attach);
         }
-        if(frame.readableBytes() > 0){
+        if (frame.readableBytes() > 0) {
 //            message.setBody(marshallingDecoder.decode(ctx, frame));
         }
         message.setHeader(header);

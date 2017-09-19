@@ -23,8 +23,14 @@ public class NioClient extends NioBasic implements Closeable {
     public NioClient() {
         try {
             channel = SocketChannel.open();
-            channel.configureBlocking(false);
+            channel.configureBlocking(false);//设置 SocketChannel 为异步模式, 这样connect, read, write 都是异步的
             channel.connect(new InetSocketAddress(NetConfig.SERVER_IP, NetConfig.SERVER_PORT));
+            /**
+             *  非阻塞模式 connect立即返回，可能还未连接成功，所以一般用while来等待
+             *  while(! channel.finishConnect() ){
+             *    //wait, or do something else...
+             *  }
+             */
             selector = Selector.open();
             channel.register(selector, SelectionKey.OP_CONNECT);
         } catch (IOException e) {

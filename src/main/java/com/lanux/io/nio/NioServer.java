@@ -22,8 +22,17 @@ public class NioServer extends NioBasic {
             selector = Selector.open();
             ssc = ServerSocketChannel.open();
             ssc.socket().bind(new InetSocketAddress(NetConfig.SERVER_IP, NetConfig.SERVER_PORT));
-            ssc.configureBlocking(false);
-            ssc.register(selector, SelectionKey.OP_ACCEPT);
+            ssc.configureBlocking(false);// Channel 要注册到 Selector 中, 那么这个 Channel 必须是非阻塞的
+            /**
+             *
+             * Connect, 即连接事件(TCP 连接), 对应于SelectionKey.OP_CONNECT
+             * Accept, 即确认事件, 对应于SelectionKey.OP_ACCEPT
+             * Read, 即读事件, 对应于SelectionKey.OP_READ, 表示 buffer 可读.
+             * Write, 即写事件, 对应于SelectionKey.OP_WRITE, 表示 buffer 可写.
+             *
+             * 我们可以使用或运算|来组合多个事件, 例如:int interestSet = SelectionKey.OP_READ | SelectionKey.OP_WRITE;
+             */
+            SelectionKey register = ssc.register(selector, SelectionKey.OP_ACCEPT);
 
             while (true) {
                 if (selector.select(NetConfig.SO_TIMEOUT) == 0) {
