@@ -19,8 +19,7 @@ public class TestNio {
             Thread.sleep(100);
         }
         for (int i = 0; i < 100; i++) {
-            client.write(i + "=" + RandomStringUtils.randomAlphabetic(RandomUtils.nextInt(100, 2000)));
-            Thread.sleep(1000);
+            client.write(i + "=" + RandomStringUtils.randomAlphabetic(RandomUtils.nextInt(1000, 20000)));
         }
         client.close();
     }
