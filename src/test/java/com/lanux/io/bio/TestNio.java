@@ -14,16 +14,14 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 public class TestNio {
 
     public static void main(String[] args) throws Exception {
-//        new Thread(() -> new NioServer(),"nio server").start();
-        new Thread(() -> new NioServer2(new ConcurrentLinkedDeque<String>()),"nio server").start();
-        Thread.sleep(2000);
         NioClient client = new NioClient();
         new Thread(() -> client.listen(),"nio client").start();
         while (!client.connected){
-            System.out.println("wait connected");
             Thread.sleep(100);
         }
-        for (int i = 0; i < 1000000; i++) {
+        System.out.println("connected");
+
+        for (int i = 0; i < 100; i++) {
             client.write(i + "=" + RandomStringUtils.randomAlphabetic(RandomUtils.nextInt(1000, 20000)));
         }
 //        client.close();

@@ -7,7 +7,7 @@ import java.util.Map;
  * Created by lanux on 2017/9/16.
  */
 public class Header {
-    private int crcCode = 0xabef0101;
+    private int crcCode = 0xABEF0101;
 
     private int length;
 
