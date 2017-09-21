@@ -42,7 +42,30 @@ channel和EventLoop是绑定的，即channel从EventLoopGroup获得一个EventLo
 
 ## client 端
 代码示例
+```
+EventLoopGroup workerGroup = new NioEventLoopGroup();
+try {
+    Bootstrap b = new Bootstrap();
+    b.group(workerGroup);
+    b.channel(NioSocketChannel.class);
+    b.option(ChannelOption.SO_KEEPALIVE, true);
+    b.handler(new ChannelInitializer<SocketChannel>() {
+        @Override
+        public void initChannel(SocketChannel ch) throws Exception {
+            ch.pipeline().addLast(new HelloClientIntHandler());
+        }
+    });
 
+    // Start the client.
+    ChannelFuture f = b.connect(host, port).sync();
+
+    // Wait until the connection is closed.
+    f.channel().closeFuture().sync();
+} finally {
+    workerGroup.shutdownGracefully();
+}
+
+```
 
 客户端只需要创建一个EventLoopGroup，因为它不需要独立的线程去监听客户端连接，也没必要通过一个单独的客户端线程去连接服务端。
 Netty是异步事件驱动的NIO框架，它的连接和所有IO操作都是异步的，因此不需要创建单独的连接线程。

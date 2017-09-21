@@ -11,9 +11,9 @@ public class Header {
 
     private int length;
 
-    private long sessionID;
+    private long sessionID = 394689346l;
 
-    private byte type;
+    private byte type = 1;
 
     private byte priority;
 

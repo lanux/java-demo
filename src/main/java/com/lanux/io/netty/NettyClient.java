@@ -8,6 +8,9 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.RandomUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -31,19 +34,14 @@ public class NettyClient {
     final Bootstrap b = new Bootstrap();
 
     public NettyClient() throws Exception {
-        try {
-            // 因为client不需要监听SelectionKey.OP_ACCEPT,只需要监听SelectionKey.OP_READ，所以只需要workerGroup
-            b.group(workerGroup)
-                    .channel(NioSocketChannel.class)
-                    .option(ChannelOption.SO_KEEPALIVE, true)
-                    .option(ChannelOption.TCP_NODELAY, true)
-                    .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-                    .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, NetConfig.SO_TIMEOUT)
-                    //Each channel has its own pipeline and it is created automatically when a new channel is created.
-                    .handler(new ChildChannelHandler());
-        } finally {
-            workerGroup.shutdownGracefully();
-        }
+        b.group(workerGroup)
+                .channel(NioSocketChannel.class)
+                .option(ChannelOption.SO_KEEPALIVE, true)
+                .option(ChannelOption.TCP_NODELAY, true)
+                .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, NetConfig.SO_TIMEOUT)
+                //Each channel has its own pipeline and it is created automatically when a new channel is created.
+                .handler(new ChildChannelHandler());
     }
 
     public static class ChildChannelHandler extends
@@ -52,9 +50,9 @@ public class NettyClient {
         @Override
         protected void initChannel(SocketChannel ch) throws Exception {
             ch.pipeline().addLast(new IdleStateHandler(0, 0, 30, TimeUnit.SECONDS))
-                    .addLast(new NettyMessageDecoder());
-//                    .addLast(new NettyMessageEncoder())
-//                    .addLast(new LoginAuthReqHandler());
+                    .addLast(new NettyMessageDecoder())
+                    .addLast(new NettyMessageEncoder())
+                    .addLast(new NettyMessageHandler());
         }
 
     }
@@ -80,7 +78,15 @@ public class NettyClient {
 
     public static void main(String[] args) {
         try {
-            new NettyClient().connect(NetConfig.SERVER_IP, NetConfig.SERVER_PORT);
+            Channel connect = new NettyClient().connect(NetConfig.SERVER_IP, NetConfig.SERVER_PORT);
+            NettyMessage msg = new NettyMessage();
+            msg.setHeader(new Header());
+            for (int i = 0; i < 100; i++) {
+                msg.getHeader().setSessionID(1000001+i);
+                msg.setBody(i + "=" + RandomStringUtils.randomAlphabetic(RandomUtils.nextInt(1000, 20000)));
+                connect.writeAndFlush(msg);
+                TimeUnit.SECONDS.sleep(1);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
