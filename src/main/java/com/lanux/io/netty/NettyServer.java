@@ -24,15 +24,15 @@ public class NettyServer {
          * the creator of Netty says multiple boss threads are useful if we share NioEventLoopGroup
          * between different server bootstraps, but I don't see the reason for it.
          */
-        EventLoopGroup bossGroup = new NioEventLoopGroup(1);
+        EventLoopGroup bossGroup = new NioEventLoopGroup(1);// 指定 Acceptor 线程池大小
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
-                    .option(ChannelOption.SO_BACKLOG, 1024)// 可以阻塞多少个client 连接
+                    .option(ChannelOption.SO_BACKLOG, 1024)// BACKLOG用于构造服务端套接字ServerSocket对象，标识当服务器请求处理线程全满时，用于临时存放已完成三次握手的请求的队列的最大长度。如果未设置或所设置的值小于1，Java将使用默认值50。
+                    .childOption(ChannelOption.SO_KEEPALIVE, true)// 是否启用心跳保活机制。在双方TCP套接字建立连接后（即都进入ESTABLISHED状态）并且在两个小时左右上层没有任何数据传输的情况下，这套机制才会被激活。
                     .childHandler(new ChildChannelHandler());
-
             ChannelFuture f = b.bind(inetHost, inetPort).sync();
             System.out.println("Netty time Server started at port " + inetPort);
             f.channel().closeFuture().sync();

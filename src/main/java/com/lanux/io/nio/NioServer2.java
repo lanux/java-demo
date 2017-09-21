@@ -21,9 +21,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Created by lanux on 2017/9/16.
  */
 public class NioServer2 extends NioBasic implements Closeable {
-    Selector selector = null;
-    ServerSocketChannel ssc = null;
-    Selector clientSelector = null;
+    private Selector acceptSelector;
+    private ServerSocketChannel ssc;
+    private Selector ioSelector;
+    private volatile boolean ioThreadStarted;
 
     private static ExecutorService executor = Executors
             .newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
@@ -31,21 +32,20 @@ public class NioServer2 extends NioBasic implements Closeable {
 
                 @Override
                 public Thread newThread(Runnable r) {
-                    return new Thread(r, "nio-server-thread-" + threadNumber.getAndIncrement());
+                    return new Thread(r, "nio-worker-thread-" + threadNumber.getAndIncrement());
                 }
             });
 
     public NioServer2() {
         try {
-            selector = Selector.open();
-            clientSelector = Selector.open();
+            acceptSelector = Selector.open();
+            ioSelector = Selector.open();
             ssc = ServerSocketChannel.open();
             ssc.socket().bind(new InetSocketAddress(NetConfig.SERVER_IP, NetConfig.SERVER_PORT));
             ssc.configureBlocking(false);
-            ssc.register(selector, SelectionKey.OP_ACCEPT);
-            new Thread(() -> listen(selector), "nio-server-accept-thread").start();
-            new Thread(() -> listen(clientSelector), "nio-server-worker-thread").start();
-
+            ssc.register(acceptSelector, SelectionKey.OP_ACCEPT);
+            new Thread(() -> listen(acceptSelector), "nio-accept-thread").start();
+            System.out.println("nio server started");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -54,8 +54,11 @@ public class NioServer2 extends NioBasic implements Closeable {
     private void listen(Selector selector) {
         while (true) {
             try {
-                //select.selectNow 非阻塞，
-                if (selector.selectNow() == 0) {
+                // selector.select() 阻塞到至少有一个通道在你注册的事件上就绪
+                // selector.select(long timeOut) 阻塞到至少有一个通道在你注册的事件上就绪或者超时timeOut
+                // selector.selectNow() 立即返回。如果没有就绪的通道则返回0,与wakeup没有太大关系。
+                // select方法的返回值表示就绪通道的个数。
+                if (selector.select() == 0) {
                     continue;
                 }
             } catch (IOException e) {
@@ -82,16 +85,22 @@ public class NioServer2 extends NioBasic implements Closeable {
                 serverSocketChannel
                         .accept()
                         .configureBlocking(false)
-                        .register(clientSelector, SelectionKey.OP_READ);
+                        .register(ioSelector, SelectionKey.OP_READ);
 
-//                clientSelector.wakeup();
-//                        .register(selector,SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-                //一般来说，你不应该注册写事件。
+                // .register(selector,SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+                // 一般来说，你不应该注册写事件。
                 // 写操作的就绪条件为底层缓冲区有空闲空间，而写缓冲区绝大部分时间都是有空闲空间的，所以当你注册写事件后，写操作一直是就绪的，选择处理线程全占用整个CPU资源。
                 // 所以，只有当你确实有数据要写时再注册写操作，并在写完以后马上取消注册。
                 //  key.interestOps(SelectionKey.OP_WRITE);  //注册写监听
                 //  key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE); //取消注册写监听
 
+                if (!ioThreadStarted) {
+                    new Thread(() -> listen(ioSelector), "nio-io-thread").start();
+                    ioThreadStarted = true;
+                }
+                // 在其他线程中在那个selector上调用wakeUp方法，使阻塞在select上的线程立即返回。
+                // 如果调用wakeUp时并没有select线程阻塞，则下次调用select时会立即返回。
+//                ioSelector.wakeup();
             }
             if (key.isReadable()) {
                 SocketChannel sc = (SocketChannel) key.channel();
@@ -123,8 +132,11 @@ public class NioServer2 extends NioBasic implements Closeable {
     @Override
     public void close() throws IOException {
         try {
-            if (selector != null) {
-                selector.close();
+            if (acceptSelector != null) {
+                acceptSelector.close();
+            }
+            if (ioSelector != null) {
+                ioSelector.close();
             }
             if (ssc != null) {
                 ssc.close();

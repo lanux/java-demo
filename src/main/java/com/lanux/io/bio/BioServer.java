@@ -32,6 +32,12 @@ public class BioServer extends BioBasic {
     public BioServer() {
         try {
             serverSocket = new ServerSocket(NetConfig.SERVER_PORT);
+            // SO_TIMEOUT：表示等待客户连接的超时时间。
+            // SO_REUSEADDR：表示是否允许重用服务器所绑定的地址。
+            // SO_RCVBUF：表示接收数据的缓冲区的大小。
+            // serverSocket.setSoTimeout(NetConfig.SO_TIMEOUT);
+            // serverSocket.setReuseAddress(true);
+            // serverSocket.setReceiveBufferSize(64*1024);
             running = true;
             while (true) {
                 final Socket socket = serverSocket.accept();

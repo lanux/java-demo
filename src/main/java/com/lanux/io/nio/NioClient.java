@@ -56,7 +56,7 @@ public class NioClient extends NioBasic implements Closeable {
                         }
                         channel.register(selector, SelectionKey.OP_READ);
                         connected = true;
-
+                        System.out.println("nio client connected");
                     } else if (key.isReadable()) {
                         SocketChannel channel = (SocketChannel) key.channel();
                         handleRead(channel);
