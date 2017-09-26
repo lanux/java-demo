@@ -44,7 +44,7 @@ public class BioBasic {
     public void writeStream(OutputStream ops, byte[] bytes) throws IOException {
         ops.write(ByteUtil.intToByteArray(bytes.length));
         ops.write(bytes);
-//        ops.flush();
+        ops.flush();
     }
 
 }
