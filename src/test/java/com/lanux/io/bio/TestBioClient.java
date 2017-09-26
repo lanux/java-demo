@@ -18,7 +18,7 @@ public class TestBioClient {
 //            client.read();
 //        }
         for (int j = 0; j < 100; j++) {
-            client.write(count++ + "=" + RandomStringUtils.randomAlphabetic(RandomUtils.nextInt(2000, 10000)));
+            client.write(count++ + "=" + RandomStringUtils.randomAlphabetic(RandomUtils.nextInt(8000, 10000)));
             client.read();
             System.out.println();
         }

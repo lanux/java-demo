@@ -15,17 +15,25 @@ public class BioBasic {
 
     public byte[] readStream(InputStream inputStream) throws IOException {
         ByteArrayOutputStream outSteam = new ByteArrayOutputStream();
-        byte[] totalLen = new byte[LENGTH_BYTES];
+        byte[] bytes = new byte[LENGTH_BYTES];
         int readLen = -1;//本次读取的字节数
         int position = 0;//已经读取数据的下一个位置
-        while ((readLen = inputStream.read(totalLen, 0, totalLen.length)) != -1) {
+        int bodyLength = 0;
+        while ((readLen = inputStream.read(bytes, 0, bytes.length)) != -1) {
             if (position == 0) {
-                position = LENGTH_BYTES;
-                int i = ByteUtil.byteArrayToInt(totalLen);
-                totalLen = new byte[i];
+                if (readLen < LENGTH_BYTES) {
+                    continue;
+                }
+                position += readLen;
+                bodyLength = ByteUtil.byteArrayToInt(bytes);
+                bytes = new byte[bodyLength];
             } else {
-                outSteam.write(totalLen);
-                break;
+                position += readLen;
+                if (position == (bodyLength + LENGTH_BYTES)) {
+                    outSteam.write(bytes);
+                    break;
+                }
+
             }
         }
         outSteam.flush();
