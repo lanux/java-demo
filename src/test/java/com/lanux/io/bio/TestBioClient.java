@@ -3,6 +3,8 @@ package com.lanux.io.bio;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Created by lanux on 2017/9/16.
  */
@@ -17,7 +19,7 @@ public class TestBioClient {
 //        for (int j = 0; j < 50; j++) {
 //            client.read();
 //        }
-        for (int j = 0; j < 100; j++) {
+        for (int j = 0; j < 100000; j++) {
             client.write(count++ + "=" + RandomStringUtils.randomAlphabetic(RandomUtils.nextInt(8000, 10000)));
             client.read();
             System.out.println();
