@@ -44,6 +44,7 @@ IO的主体部分，以下内容主要讲这一部分；
 输入流 | InputStream | Reader
 输出流 | OutputStream | Writer
 
+![image](https://raw.githubusercontent.com/lanux/java-demo/master/public/img/java-io-stream.png)
 
 ```
 graph LR
@@ -93,6 +94,68 @@ OutputStream-->PipedOutputStream
 OutputStream-->ByteArrayOutputStream
 ```
 
+
+一、按I/O类型来总体分类：
+
+     1. Memory 1）从/向内存数组读写数据: CharArrayReader、 CharArrayWriter、ByteArrayInputStream、ByteArrayOutputStream
+                   2）从/向内存字符串读写数据 StringReader、StringWriter、StringBufferInputStream
+     2.Pipe管道  实现管道的输入和输出（进程间通信）: PipedReader、PipedWriter、PipedInputStream、PipedOutputStream
+     3.File 文件流。对文件进行读、写操作 ：FileReader、FileWriter、FileInputStream、FileOutputStream
+     4. ObjectSerialization 对象输入、输出 ：ObjectInputStream、ObjectOutputStream
+     5.DataConversion数据流 按基本数据类型读、写（处理的数据是Java的基本类型（如布尔型，字节，整数和浮点数））：DataInputStream、DataOutputStream
+     6.Printing 包含方便的打印方法 ：PrintWriter、PrintStream
+     7.Buffering缓冲  在读入或写出时，对数据进行缓存，以减少I/O的次数：BufferedReader、BufferedWriter、BufferedInputStream、BufferedOutputStream
+     8.Filtering 滤流，在数据进行读或写时进行过滤：FilterReader、FilterWriter、FilterInputStream、FilterOutputStream过
+     9.Concatenation合并输入 把多个输入流连接成一个输入流 ：SequenceInputStream
+
+    10.Counting计数  在读入数据时对行记数 ：LineNumberReader、LineNumberInputStream
+    11.Peeking Ahead 通过缓存机制，进行预读 ：PushbackReader、PushbackInputStream
+    12.Converting between Bytes and Characters 按照一定的编码/解码标准将字节流转换为字符流，或进行反向转换（Stream到Reader,Writer的转换类）：InputStreamReader、OutputStreamWriter
+
+
+ 1) FileReader :与FileInputStream对应
+           主要用来读取字符文件，使用缺省的字符编码，有三种构造函数：
+　　    (1）将文件名作为字符串 ：FileReader f=new FileReader(“c:/temp.txt”);
+　　    (2）构造函数将File对象作为其参数。
+　　            File f=new file(“c:/temp.txt”);
+　　            FileReader f1=new FileReader(f);
+　　   (3)  构造函数将FileDescriptor对象作为参数
+　　          FileDescriptor() fd=new FileDescriptor()
+　　          FileReader f2=new FileReader(fd);
+               (1) 用指定字符数组作为参数：CharArrayReader(char[])
+               (2) 将字符数组作为输入流:CharArrayReader(char[], int, int)
+　         读取字符串，构造函数如下： public StringReader(String s);
+        2) CharArrayReader：与ByteArrayInputStream对应
+　　3) StringReader : 与StringBufferInputStream对应
+　　4) InputStreamReader
+　　      从输入流读取字节，在将它们转换成字符:Public inputstreamReader(inputstream is);
+　　5) FilterReader: 允许过滤字符流
+　　      protected filterReader(Reader r);
+　　6) BufferReader :接受Reader对象作为参数，并对其添加字符缓冲器，使用readline()方法可以读取一行。
+　　   Public BufferReader(Reader r);
+
+## 如何选择IO流
+    1）确定是数据源和数据目的（输入还是输出）
+              源:输入流 InputStream Reader
+              目的:输出流 OutputStream Writer
+    2）明确操作的数据对象是否是纯文本
+             是:字符流Reader，Writer
+             否:字节流InputStream，OutputStream
+    3）明确具体的设备。
+             是硬盘文件：File++：
+             读取：FileInputStream,, FileReader,
+              写入：FileOutputStream，FileWriter
+             是内存用数组
+                  byte[]：ByteArrayInputStream, ByteArrayOutputStream
+                  是char[]：CharArrayReader, CharArrayWriter
+             是String：StringBufferInputStream(已过时，因为其只能用于String的每个字符都是8位的字符串), StringReader, StringWriter
+             是网络用Socket流
+             是键盘：用System.in（是一个InputStream对象）读取，用System.out（是一个OutoutStream对象）打印
+    3）是否需要转换流
+            是，就使用转换流，从Stream转化为Reader，Writer：InputStreamReader，OutputStreamWriter
+    4）是否需要缓冲提高效率
+       是就加上Buffered：BufferedInputStream, BufferedOuputStream, BuffereaReader, BufferedWriter
+    5）是否需要格式化输出
 
 
 
