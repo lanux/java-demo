@@ -46,8 +46,6 @@ IO的主体部分，以下内容主要讲这一部分；
 
 
 ![image](https://raw.githubusercontent.com/lanux/java-demo/master/public/img/java-IO-2.png)
-![image](https://raw.githubusercontent.com/lanux/java-demo/master/public/img/java-io-stream.png)
-
 
 什么是 Java 序列化，如何实现 Java 序列化？
 
