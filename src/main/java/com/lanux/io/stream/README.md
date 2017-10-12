@@ -61,7 +61,8 @@ IO的主体部分，以下内容主要讲这一部分；
 过滤基类 | FilterInputStream | FilterOutputStream | FilterReader | FilterWriter
 打印 | -- | PrintStream | -- | PrintWriter
 特殊 | DataInputStream | DataOutputStream | -- | --
-
+声音 | AudioInputStream | | |
+工具 | SequenceInputStream | | |
 什么是 Java 序列化，如何实现 Java 序列化？
 
 序列化就是一种用来处理对象流的机制，所谓对象流也就是将对象的内容进行流化。可以对流化后的对象进行读写操作，也可将流化后的对象传输于网络之间。序列化是为了解决在对对象流进行读写操作时所引发的问题。

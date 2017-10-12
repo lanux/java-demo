@@ -19,7 +19,6 @@ public class WaitNotifySemaphore {
                     System.out.println("start " + this.getName());
                     try {
                         int i1 = random.nextInt() & 3000;
-                        System.out.println("sleep = " + i1);
                         Thread.sleep(100 + i1);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
@@ -34,7 +33,7 @@ public class WaitNotifySemaphore {
     private static void unLock() {
         COUNTER.getAndDecrement();
         synchronized (LOCK) {
-            LOCK.notifyAll();
+            LOCK.notify();
         }
     }
 
