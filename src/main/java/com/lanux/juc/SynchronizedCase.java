@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * static的方法属于类方法，它属于这个Class（注意：这里的Class不是指Class的某个具体对象），
@@ -14,7 +16,14 @@ import java.util.concurrent.Executors;
  * 网上说 "synchronized修饰静态方法作用的象是这个类的所有对象" 这句话是错误的
  */
 public class SynchronizedCase {
-    static ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
+    static ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2,
+            new ThreadFactory() {
+                AtomicInteger counter = new AtomicInteger(1);
+                @Override
+                public Thread newThread(Runnable r) {
+                    return new Thread(r,"thread-" + counter.getAndIncrement());
+                }
+            });
 
     public static void main(String[] args) throws Exception {
         test();

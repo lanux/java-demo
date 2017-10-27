@@ -6,45 +6,45 @@ import java.lang.reflect.Proxy;
 
 public class ProxyCase {
 
-    interface UserManager {
+    interface UserService {
         void addUser(String userId, String userName);
 
         void delUser(String userId);
     }
 
-    class UserManagerImpl implements UserManager {
+    class UserServiceImpl implements UserService {
 
         @Override
         public void addUser(String userId, String userName) {
-            System.out.println("UserManagerImpl.addUser");
+            System.out.println("UserServiceImpl.addUser");
         }
 
         @Override
         public void delUser(String userId) {
-            System.out.println("UserManagerImpl.delUser");
+            System.out.println("UserServiceImpl.delUser");
         }
     }
 
-    class UserManagerImplProxy implements UserManager {
+    class UserServiceImplProxy implements UserService {
 
         // 目标对象
-        private UserManager userManager;
+        private UserService userService;
 
         // 通过构造方法传入目标对象
-        public UserManagerImplProxy(UserManager userManager) {
-            this.userManager = userManager;
+        public UserServiceImplProxy(UserService userService) {
+            this.userService = userService;
         }
 
         @Override
         public void addUser(String userId, String userName) {
             System.out.println("start-->addUser()");
-            userManager.addUser(userId, userName);
+            userService.addUser(userId, userName);
             System.out.println("success-->addUser()");
         }
 
         @Override
         public void delUser(String userId) {
-            userManager.delUser(userId);
+            userService.delUser(userId);
         }
     }
 
@@ -86,12 +86,13 @@ public class ProxyCase {
 
     public static void main(String[] args) {
         ProxyCase pc = new ProxyCase();
-//        UserManager userManager = pc.new UserManagerImplProxy(pc.new UserManagerImpl());
-//        userManager.addUser("001", "张三");
+//        UserService userService = pc.new UserServiceImplProxy(pc.new UserServiceImpl());
+//        userService.addUser("001", "张三");
 
         LogHandler logHandler = pc.new LogHandler();
-        UserManager userManager = (UserManager) logHandler.newProxyInstance(pc.new UserManagerImpl());
-        //UserManager userManager=new UserManagerImpl();
-        userManager.addUser("0001", "张三");
+        UserService userService = (UserService) logHandler.newProxyInstance(pc.new UserServiceImpl());
+        //UserManager userManager=new UserServiceImpl();
+        userService.addUser("0001", "张三");
     }
+
 }
