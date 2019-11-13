@@ -22,21 +22,28 @@
 ### 3 高吞吐低延时
 
 #### 3.1 写入
-- 3.1.1 **顺序写入(Sequence I/O）**
+- 3.1.1 **利用Partition实现并行处理**   
+   - Kafka中的每个Topic都包含一个或多个Partition，且它们位于不同节点。 
+   - Partition在物理上对应一个本地文件夹，每个Partition包含一个或多个Segment，其中包含一个数据文件与一个索引文件。  
+   - Partition像一个数组，可以通过索引（offset）去访问其数据。  
+   - Kafka可以通过配置让同一节点的不同Partition置于不同的disk drive上，从而实现磁盘间的并行处理。  
+> 具体方法：将不同磁盘mount到不同目录，在server.properties中，将log.dirs设置为多目录（逗号分隔），Kafka会自动将所有Partition均匀分配到不同disk上。
+
+- 3.1.2 **顺序写入(Sequence I/O）**
  
     磁盘操作有以下几个好处： 
     > 1. 磁盘顺序读写速度超过内存随机读写
     > 1. JVM的GC效率低，内存占用大。使用磁盘可以避免这一问题
     > 1. 系统冷启动后，磁盘数据依然可用
     
-- 3.1.2 **Memory Mapped Files（PageCache）**  
+- 3.1.3 **Memory Mapped Files（PageCache）**  
     当上层有写操作时，操作系统只是将数据写入 PageCache，同时标记 Page 属性为 Dirty。当读操作发生时，先从 PageCache 中查找，如果发生缺页才进行磁盘调度，最终返回需要的数据。
     实际上 PageCache 是把尽可能多的空闲内存都当做了磁盘缓存来使用。
 
 
 #### 3.2 读取
 
-- 3.2.1 **基于sendfile实现Zero Copy**
+- 3.2.1 **基于sendfile实现Zero Copy**  
     传统的网络 I/O 操作流程:
     ![](./img/c-read.png)
     
@@ -44,6 +51,9 @@
     ![](./img/Sendfile.png)
 
 - 3.2.2 **批量压缩**
+    - Kafka使用了批量压缩，即将多个消息一起压缩而不是单个消息压缩
+    - Kafka允许使用递归的消息集合，批量的消息可以通过压缩的形式传输并且在日志中也可以保持压缩格式，直到被消费者解压缩
+    - Kafka支持多种压缩协议，包括Gzip和Snappy压缩协议
 
 #### 3.3 总结 
 Kafka速度的秘诀在于，它把所有的消息都变成一个批量的文件，并且进行合理的批量压缩，减少网络IO损耗，通过mmap提高I/O速度，写入数据的时候由于单个Partion是末尾添加所以速度最优；读取数据的时候配合sendfile直接暴力输出。
