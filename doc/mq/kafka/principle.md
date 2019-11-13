@@ -39,7 +39,9 @@
 - 3.1.3 **Memory Mapped Files（PageCache）**  
     当上层有写操作时，操作系统只是将数据写入 PageCache，同时标记 Page 属性为 Dirty。当读操作发生时，先从 PageCache 中查找，如果发生缺页才进行磁盘调度，最终返回需要的数据。
     实际上 PageCache 是把尽可能多的空闲内存都当做了磁盘缓存来使用。
-
+    
+- 3.1.4 **NIO**
+    ![](./img/io.png)
 
 #### 3.2 读取
 
