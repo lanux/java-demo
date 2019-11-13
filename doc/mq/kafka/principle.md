@@ -23,7 +23,7 @@
 
 #### 3.1 写入
 - 3.1.1 **利用Partition实现并行处理**   
-   - Kafka中的每个Topic都包含一个或多个Partition，且它们位于不同节点。 
+   - Kafka中的每个Topic都包含一个或多个Partition，且它们位于不同节点。 
    - Partition在物理上对应一个本地文件夹，每个Partition包含一个或多个Segment，其中包含一个数据文件与一个索引文件。  
    - Partition像一个数组，可以通过索引（offset）去访问其数据。  
    - Kafka可以通过配置让同一节点的不同Partition置于不同的disk drive上，从而实现磁盘间的并行处理。  
