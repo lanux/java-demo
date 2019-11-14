@@ -1,5 +1,5 @@
 
-##### Kafka的优点？
+#### 1 Kafka的优点？
  - 高吞吐，低延迟
  - 持久性、可靠性
  - 容错性
@@ -9,14 +9,17 @@
  
 ![图片](./img/ar.png)
  
-#### 名词解析
+#### 2 名词解析
 - **Producer** ：消息生产者，就是向 kafka broker 发消息的客户端。
 - **Consumer** ：消息消费者，向 kafka broker 取消息的客户端。
 - **Topic** ：可以理解为一个队列，一个 Topic 又分为一个或多个分区，
-- **Consumer Group**：这是 kafka 用来实现一个 topic 消息的广播（发给所有的 consumer）和单播（发给任意一个 consumer）的手段。一个 topic 可以有多个 Consumer Group。
+- **Consumer Group**：一个 topic 可以有多个 Consumer Group。一个partition同一时间只能绑定consumer group里面的一个consumer。一个partition可以被多个不同group的consumer同时消费
 - **Broker** ：一台 kafka 服务器就是一个 broker。一个集群由多个 broker 组成。一个 broker 可以容纳多个 topic。
-- **Partition**：为了实现扩展性，一个非常大的 topic 可以分布到多个 broker上，每个 partition 是一个有序的队列。partition 中的每条消息都会被分配一个有序的id（offset）。将消息发给 consumer，kafka 只保证按一个 partition 中的消息的顺序，不保证一个 topic 的整体（多个 partition 间）的顺序。
-- **Offset**：kafka 的存储文件都是按照 offset.kafka 来命名，用 offset 做名字的好处是方便查找。例如你想找位于 2049 的位置，只要找到 2048.kafka 的文件即可。当然 the first offset 就是 00000000000.kafka。
+- **Partition**：为了实现扩展性，一个非常大的 topic 可以分布到多个 broker上，每个 partition 是一个有序的队列。
+partition 中的每条消息都会被分配一个有序的id（offset）。
+将消息发给 consumer，kafka 只保证按一个 partition 中的消息的顺序，不保证一个 topic 的整体（多个 partition 间）的顺序。partition可以动态增加但不能减少。
+- **Offset**：kafka 的存储文件都是按照 offset.kafka 来命名，用 offset 做名字的好处是方便查找。例如你想找位于 2049 的位置，只要找到 2048.kafka 的文件即可。
+当然 the first offset 就是 00000000000.kafka。
 
 
 ### 3 高吞吐低延时
@@ -59,6 +62,23 @@
 
 #### 3.3 总结 
 Kafka速度的秘诀在于，它把所有的消息都变成一个批量的文件，并且进行合理的批量压缩，减少网络IO损耗，通过mmap提高I/O速度，写入数据的时候由于单个Partion是末尾添加所以速度最优；读取数据的时候配合sendfile直接暴力输出。
+
+
+#### 4 Rebalance 
+为Consumer分配partition的过程就被称为Consumer Rebalance
+  1. zk会话过期
+  1. 有新的消费者加入Consumer Group
+  1. 有消费者主动退出Consumer Group
+  1. Consumer Group订阅的任何一个Topic出现分区数量的变化
+    
+#### 5 选举
+- 5.1 控制器（Broker）选主
+    - 集群中第一个启动的broker会通过在zookeeper中创建临时节点/controller来让自己成为控制器
+    - 其他broker启动时也会在zookeeper中创建临时节点，但是发现节点已经存在，所以它们会收到一个异常，那么就会在创建watch对象，便于它们收到zk上节点变更的通知。
+    - 如果leader异常，zk上面节点变更，其它节点监听到变化就会去尝试创建临时节点/controller，如果有一个broker创建成功则成为新leader，其它节点继续watch
+- 5.2 分区多副本选主
+    
+- 5.3 消费组选主
 
 
 [参考](https://www.jianshu.com/p/d0fc412bcf46)
