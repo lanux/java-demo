@@ -12,7 +12,7 @@
 1. [数据库](./rdbs/)
     1. [mysql](./rdbs/mysql)
     1. [存储引擎](./rdbs/engine/)
-    1. [索引](./rdbs/index/)
+    1. [索引](./rdbs/index.md)
     1. [执行计划](./rdbs/plain/)
     1. [性能优化](./rdbs/optimize/)
     
