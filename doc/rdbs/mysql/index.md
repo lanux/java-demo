@@ -109,10 +109,12 @@ MyISAM有3种行存储格式：`fixed`、`dynamic`、`compressed`；
 InnoDB表主键索引是基于聚簇索引建立的，聚簇索引对主键的查询有很高的性能，不过他的二级索引（非主键索引）必须包含主键列。
 
 主键索引
+
 ![](./img/InnoDB.png)
 > InnoDB表数据文件本身就是主索引
 
 二级索引
+
 ![](./img/InnoDB2.png)
 > 索引的key是数据表的主键
 
@@ -155,7 +157,7 @@ MySQL5.6的默认文件格式。
 ![](./img/row-store1.jpg)
 
 > **Compact** 和 **Redundant** 格式最大的不同就是记录格式的第一个部分；  
-> **Compact**：行记录的第一部分倒序存放了一行数据中列的长度（Length）；
+> **Compact**：行记录的第一部分倒序存放了一行数据中列的长度（Length）；  
 > **Redundant**：中存的是每一列的偏移量（Offset），从总体上上看，Compact 行记录格式相比 Redundant 格式能够减少 20% 的存储空间。
 
 使用 Compact 或者 Redundant 格式存储变长的 VARCHAR 或者 BLOB 这类大对象时，我们并不会直接将所有的内容都存放在数据页节点中，而是将行数据中的前 **768** 个字节存储在数据页中，后面会通过偏移量指向溢出页。
