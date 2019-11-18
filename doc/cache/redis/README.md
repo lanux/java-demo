@@ -1,8 +1,15 @@
-<!-- MarkdownTOC levels="1,2,3,4" autolink="true"  style="unordered" -->
+<!-- MarkdownTOC levels="1,2,3,4,5" autolink="true"  style="unordered" -->
 
-- [1. redis模型](#1-redis%E6%A8%A1%E5%9E%8B)
-    - [redis单线程模型也能效率这么高？](#redis%E5%8D%95%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B%E4%B9%9F%E8%83%BD%E6%95%88%E7%8E%87%E8%BF%99%E4%B9%88%E9%AB%98%EF%BC%9F)
+- [1. Redis线程模型](#1-redis%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B)
+	- [Redis线程模型](#redis%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B)
+	- [redis单线程模型也能效率这么高？](#redis%E5%8D%95%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B%E4%B9%9F%E8%83%BD%E6%95%88%E7%8E%87%E8%BF%99%E4%B9%88%E9%AB%98%EF%BC%9F)
 - [2. I/O 多路复用程序的实现](#2-io-%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%E7%A8%8B%E5%BA%8F%E7%9A%84%E5%AE%9E%E7%8E%B0)
+	- [select](#select)
+	- [poll](#poll)
+	- [epoll](#epoll)
+		- [epoll 相关函数：](#epoll-%E7%9B%B8%E5%85%B3%E5%87%BD%E6%95%B0%EF%BC%9A)
+		- [epoll的三大关键要素：](#epoll%E7%9A%84%E4%B8%89%E5%A4%A7%E5%85%B3%E9%94%AE%E8%A6%81%E7%B4%A0%EF%BC%9A)
+		- [epoll对文件描述符的操作有两种模式：](#epoll%E5%AF%B9%E6%96%87%E4%BB%B6%E6%8F%8F%E8%BF%B0%E7%AC%A6%E7%9A%84%E6%93%8D%E4%BD%9C%E6%9C%89%E4%B8%A4%E7%A7%8D%E6%A8%A1%E5%BC%8F%EF%BC%9A)
 - [3. Redis数据结构](#3-redis%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84)
 	- [哈希对象](#%E5%93%88%E5%B8%8C%E5%AF%B9%E8%B1%A1)
 	- [字符串对象](#%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%AF%B9%E8%B1%A1)
@@ -43,6 +50,28 @@ I/O 多路复用程序负责监听多个套接字(Socket)， 并向文件事件�
 #### poll
 
 #### epoll
+
+```
+　　int epfd,nfds;
+　　struct epoll_event ev,events[5]; //ev用于注册事件，数组用于返回要处理的事件
+　　epfd = epoll_create(1); //只需要监听一个描述符——标准输入
+　　ev.data.fd = STDIN_FILENO;
+　　ev.events = EPOLLIN|EPOLLET; //监听读状态同时设置ET模式
+　　epoll_ctl(epfd, EPOLL_CTL_ADD, STDIN_FILENO, &ev); //注册epoll事件
+　　for(;;)
+　　{
+　　　　nfds = epoll_wait(epfd, events, 5, -1);
+　　　　for(int i = 0; i < nfds; i++)
+　　　　{
+　　　　　　if(events[i].data.fd==STDIN_FILENO)
+　　　　　　{　　
+                printf("welcome to epoll's word!\n");
+           }
+
+　　　　}
+　　}
+
+```
 
 ##### epoll 相关函数：
 - `int epoll_create(int size);`
