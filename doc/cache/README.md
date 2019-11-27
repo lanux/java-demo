@@ -31,7 +31,43 @@
 #### 集群部署方式
 #### 主从复制原理和优化策略
 #### 持久化原理
+#### client端并发原子性
+#### 分布式锁实现
 
+```
+setnx redisLock true
+...业务逻辑执行...
+del redisLock
+```
+
+异常情况下锁自动释放
+
+```
+setnx redisLock true
+expire redisLock 5
+... 业务逻辑执行 ...
+del redisLock
+```
+
+原子命令
+
+```
+set redisLock true ex 10 nx
+... 业务逻辑执行 ...
+del redisLock
+```
+
+- 在zookeeper中一但服务器进程down掉或者心跳超时，zk中的临时序列会自动释放。但是Redis中没有这样的机制。
+- 如果业务在加锁和释放锁之间的逻辑执行的太长，超出了锁的超时时间，锁就会自动超时释放。甚至在第一个业务执行结束后，释放了后进入业务的分布式锁，打乱了整个锁的持有和释放。
+
+合理设定锁持有时间，使用lua脚本，乐观锁的方式删除锁
+```
+String random = Math.random() + "";
+jedis.set("redisLock", random, "NX", "EX", 5);
+... 业务逻辑执行 ...
+String script = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
+jedis.eval(script,Collections.singletonList(lockKey), Collections.singletonList(random));
+```
 
 ## 缓存
 #### 缓存和数据库双写一致性问题
