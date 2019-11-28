@@ -1,12 +1,23 @@
 package com.lanux.rxjava;
 
+import com.google.common.collect.Lists;
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.schedulers.Schedulers;
 
+import java.util.ArrayList;
+
 public class Test {
+    static class User{
+        private String name;
+    }
+
     public static void main(String[] args) throws InterruptedException {
+        Observable.just(new ArrayList<User>(),new ArrayList<User>())
+                .flatMap(userList->Observable.fromIterable(userList))
+                .map(user->user.name)
+                .subscribe(name-> System.out.println(name));
         Observable.create(new ObservableOnSubscribe<String>() {
             @Override
             public void subscribe(ObservableEmitter<String> observableEmitter) throws Exception {
